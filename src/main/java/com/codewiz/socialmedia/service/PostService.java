@@ -61,10 +61,10 @@ public class PostService   {
         return creator;
     }
 
-    private static MediaType getMediaType(MultipartFile mediaFile) {
-        return Objects.requireNonNull(mediaFile.getContentType()).startsWith("video/") ? MediaType.VIDEO :
-                (mediaFile.getContentType().startsWith("image/") ? MediaType.IMAGE : null);
-    }
+        private static MediaType getMediaType(MultipartFile mediaFile) {
+            return Objects.requireNonNull(mediaFile.getContentType()).startsWith("video/") ? MediaType.VIDEO :
+                    (mediaFile.getContentType().startsWith("image/") ? MediaType.IMAGE : null);
+        }
 
     private String storeFileInS3(MultipartFile mediaFile) throws IOException {
         String fileName = UUID.randomUUID().toString()+" - "+ mediaFile.getOriginalFilename();
@@ -74,7 +74,7 @@ public class PostService   {
                     .key(fileName)
                     .build();
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(mediaFile.getBytes()));
-        }
+        }else{return null;}
         return fileName;
     }
 

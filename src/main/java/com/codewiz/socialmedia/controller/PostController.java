@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/posts")
@@ -44,10 +46,16 @@ public class PostController {
     public Post updatePost(@PathVariable String id,
                            @RequestParam String title,
                            @RequestParam String text,
-                           @RequestParam List<String> tags,
+                           @RequestParam String tags, // <-- đổi kiểu
                            @RequestParam(value = "mediaFile", required = false) MultipartFile mediaFile) throws IOException {
-        return postService.updatePost(id, title, text, tags,mediaFile);
+        List<String> tagList = Arrays.stream(tags.split(","))
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .collect(Collectors.toList());
+
+        return postService.updatePost(id, title, text, tagList, mediaFile);
     }
+
 
     @DeleteMapping("/{id}")
     public void deletePost(@PathVariable String id) {

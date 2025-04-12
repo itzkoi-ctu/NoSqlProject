@@ -1,9 +1,7 @@
 package com.codewiz.socialmedia.controller;
 
-import com.codewiz.socialmedia.model.LoginDto;
-import com.codewiz.socialmedia.model.LoginResponse;
-import com.codewiz.socialmedia.model.User;
-import com.codewiz.socialmedia.model.UserDto;
+import com.codewiz.socialmedia.dto.UserResponse;
+import com.codewiz.socialmedia.model.*;
 import com.codewiz.socialmedia.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -36,4 +34,25 @@ public class UserController {
         var loginResponse = userService.authenticate(loginUserDto);
         return ResponseEntity.ok(loginResponse);
     }
+
+
+    @GetMapping("/{id}/user-detail")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable String id){
+        return ResponseEntity.ok().body(userService.getUserById(id));
+    }
+
+
+
+    @PutMapping("/{id}/update")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable String id,
+            @RequestParam String name,
+            @RequestParam String email,
+            @RequestParam(required = false) MultipartFile profilePhoto
+    ) throws IOException {
+        UpdateUserDto updateUserDto = new UpdateUserDto(name, email, profilePhoto);
+        UserResponse updatedUser = userService.updateUser(id, updateUserDto);
+        return ResponseEntity.ok(updatedUser);
+    }
+
 }
