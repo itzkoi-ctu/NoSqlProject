@@ -67,6 +67,7 @@ public class PostController {
     public void likePost(@PathVariable String id) {
         postService.likePost(id);
     }
+
     @GetMapping("/creator/{creatorId}")
     public ResponseEntity<List<Post>> getPostsByCreatorId(@PathVariable String creatorId) {
         List<Post> posts = postService.getPostByCreatorId(creatorId);
@@ -76,4 +77,33 @@ public class PostController {
     public ResponseEntity<String> deleteAllPostByCreatorId(@RequestParam String creatorId){
         return ResponseEntity.ok(postService.deleteAllByCreatorId(creatorId));
     }
+
+    // 🔍 Tìm kiếm toàn văn
+    @GetMapping("/search")
+    public Page<Post> searchPosts(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return postService.searchPosts(keyword, page, size);
+    }
+
+    // 🧑‍💻 Lấy bài viết theo người dùng
+    @GetMapping("/user/{userId}")
+    public List<Post> getUserPosts(@PathVariable String userId) {
+        return postService.getPostByCreatorId(userId);
+    }
+
+    // 🗑️ Xóa toàn bộ bài viết của người dùng
+    @DeleteMapping("/user/{userId}")
+    public void deleteAllPostsByUser(@PathVariable String userId) {
+        postService.deleteAllPostsByUser(userId);
+    }
+
+    // ✅ Kiểm tra quyền sở hữu bài viết
+    @GetMapping("/ownership")
+    public boolean checkOwnership(@RequestParam String postId, @RequestParam String userId) {
+        return postService.isUserOwnerOfPost(postId, userId);
+    }
+
 }

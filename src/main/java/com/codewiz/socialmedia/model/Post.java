@@ -19,11 +19,13 @@ public class Post {
     private String text;
     private List<String> tags;
     private String mediaUrl;
-    @Transient
-    private String presignedUrl;
     private MediaType mediaType;
     private LocalDateTime createdAt;
-    private int likes;
+    private long likes;
     private PostCreator creator;
+    @Transient
+    private String presignedUrl;
+    @Transient
+    private boolean owner;
 
 }

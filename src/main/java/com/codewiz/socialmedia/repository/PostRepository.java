@@ -23,5 +23,8 @@ public interface PostRepository extends MongoRepository<Post, String> {
     void incrementLikes(String postId);
 
     List<Post> findByCreator_Id(String creatorId);
+
     void deleteAllByCreator_Id(String creatorId);
+
+
 }

@@ -1,6 +1,7 @@
 package com.codewiz.socialmedia.config;
 
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,7 @@ public class AWSConfig {
             @Value("${aws.s3.accessKey}") String accessKey,
             @Value("${aws.s3.secretKey}") String secretKey,
             @Value("${aws.s3.endpoint}") String endpoint
+
     ) {
         log.info("AccessKey", accessKey);
         AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
@@ -32,4 +34,7 @@ public class AWSConfig {
                 .endpointOverride(URI.create(endpoint))
                 .build();
     }
+
 }
+
+

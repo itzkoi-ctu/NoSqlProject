@@ -1,8 +1,11 @@
 package com.codewiz.socialmedia.controller;
 
 import com.codewiz.socialmedia.config.AWSConfig;
+import com.codewiz.socialmedia.model.AddressDto;
 import com.codewiz.socialmedia.model.LoginDto;
 import com.codewiz.socialmedia.model.UserDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
@@ -28,6 +31,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
 import java.io.File;
+import java.util.List;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -74,8 +78,30 @@ public class UserControllerIntegrationTest {
     @Test
     @Order(1)
     public void testRegisterUser() {
-        UserDto userDto = new UserDto("John Doe", "john.doe@example.com", "password123", null);
+        UserDto userDto = new UserDto(
+                "John Doe",
+                "john.doe@example.com",
+                "password123",
+                null,                      // Không upload ảnh
+                "Male",                    // Giới tính
+                "1990-01-01",              // Ngày sinh
+                List.of("https://mywebsite.com"), // Websites (có thể để null hoặc empty list)
+                new AddressDto(
+                        "USA",           // Quốc gia
+                        "New York",      // Thành phố
+                        "NY",            // Bang
+                        "10001",         // Mã bưu điện
+                        "5th Avenue"     // Địa chỉ
+                )
+        );
         File profilePhoto = new File("src/test/resources/profile-photo.jpg");
+
+        String addressJson = null;
+        try {
+            addressJson = new ObjectMapper().writeValueAsString(userDto.address());
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();  // Hoặc ném ngoại lệ
+        }
 
         given()
                 .port(port)
@@ -83,13 +109,24 @@ public class UserControllerIntegrationTest {
                 .multiPart("name", userDto.name())
                 .multiPart("email", userDto.email())
                 .multiPart("password", userDto.password())
-                .multiPart("profilePhoto", profilePhoto)
+                .multiPart("gender", userDto.gender())
+                .multiPart("dateOfBirth", userDto.dateOfBirth())
+                .multiPart("otherWebsites", userDto.otherWebsites())
+                .multiPart("profilePhoto", profilePhoto) // Nếu có ảnh
+                .multiPart("address", addressJson)
                 .when()
                 .post("/user/signup")
                 .then()
                 .statusCode(200)
                 .body("name", equalTo(userDto.name()))
-                .body("email", equalTo(userDto.email()));
+                .body("email", equalTo(userDto.email()))
+                .body("gender", equalTo(userDto.gender()))  // Kiểm tra giới tính
+                .body("dateOfBirth", equalTo(userDto.dateOfBirth())) // Kiểm tra ngày sinh
+                .body("address.country", equalTo(userDto.address().country()))  // Kiểm tra địa chỉ
+                .body("address.city", equalTo(userDto.address().city()))
+                .body("address.stateOrProvince", equalTo(userDto.address().stateOrProvince()))
+                .body("address.zipCode", equalTo(userDto.address().zipCode()))
+                .body("address.streetAddress", equalTo(userDto.address().streetAddress()));
     }
 
     @Test

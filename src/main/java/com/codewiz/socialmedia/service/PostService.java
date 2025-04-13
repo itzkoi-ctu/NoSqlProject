@@ -8,10 +8,8 @@ import com.codewiz.socialmedia.repository.PostRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -79,7 +77,7 @@ public class PostService   {
     }
 
     public Page<Post> getAllPosts(int page, int size,String searchCriteria) {
-        Sort sort = Sort.by(Sort.Direction.DESC, "id");
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
         var postList =
                 StringUtils.hasText(searchCriteria)? postRepository.searchByText(searchCriteria,PageRequest.of(page, size, sort))
                         :postRepository.findAll(PageRequest.of(page, size, sort));
@@ -133,12 +131,61 @@ public class PostService   {
         }
         postRepository.deleteById(id);
     }
+
     public String deleteAllByCreatorId(String creatorId) {
         postRepository.deleteAllByCreator_Id(creatorId);
         return "Deleted successfully";
     }
 
+
+    public String deleteAllPostsByUser(String userId) {
+        // Kiểm tra quyền sở hữu trước khi cho phép xóa tất cả bài viết
+        var auth = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        var claims = auth.getToken().getClaims();
+        var currentUserId = (String) claims.get("id");
+
+        // Nếu người dùng hiện tại không phải là chủ sở hữu của bài viết, ném ngoại lệ
+        if (!currentUserId.equals(userId)) {
+            throw new RuntimeException("You do not have permission to delete posts for this user.");
+        }
+        List<Post> posts = postRepository.findByCreator_Id(userId);
+        for (Post post : posts) {
+            if (post.getMediaUrl() != null) {
+                try {
+                    s3Client.deleteObject(b -> b.bucket(AWSConfig.BUCKET_NAME).key(post.getMediaUrl()));
+                } catch (Exception e) {
+                    // Log lỗi nếu việc xóa tệp không thành công
+                    System.err.println("Error deleting media from S3: " + e.getMessage());
+                    // Có thể thêm cơ chế rollback ở đây nếu cần
+                }
+            }
+        }
+        postRepository.deleteAllByCreator_Id(userId);
+        return "Deleted successfully";
+    }
+
+    private void generatePresignedUrlForPost(Post post) {
+        if (post.getMediaUrl() != null) {
+            post.setPresignedUrl(s3PresignedUrlService.generatePresignedUrl(post.getMediaUrl()));
+        }
+        if (post.getCreator() != null && post.getCreator().getId() != null) {
+            post.getCreator().setProfilePhoto(s3PresignedUrlService.generatePresignedUrl(post.getCreator().getId() + "-profile"));
+        }
+    }
+
     public void likePost(String id) {
         postRepository.incrementLikes(id);
+    }
+
+
+    public Page<Post> searchPosts(String searchCriteria, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return postRepository.findByTitleContainingOrTextContainingOrTagsContaining(searchCriteria, searchCriteria, searchCriteria, pageable);
+    }
+
+    // Kiểm tra quyền sở hữu bài viết
+    public boolean isUserOwnerOfPost(String postId, String userId) {
+        Post post = postRepository.findById(postId).orElse(null); // Lấy bài viết từ repository
+        return post != null && post.getCreator().getId().equals(userId); // Kiểm tra chủ sở hữu
     }
 }
