@@ -100,6 +100,17 @@ public class PostService   {
         return post;
     }
 
+    public List<Post> getPostByCreatorId(String creatorId){
+        List<Post> postList= postRepository.findByCreator_Id(creatorId);
+        postList.forEach(post -> {
+            if(post.getMediaUrl()!= null){
+                post.setPresignedUrl(s3PresignedUrlService.generatePresignedUrl(post.getMediaUrl()));
+            }
+            post.getCreator().setProfilePhoto(s3PresignedUrlService.generatePresignedUrl(post.getCreator().getId()+"-profile"));
+        });
+        return postList;
+    }
+
     public Post updatePost(String id, String title, String text, List<String> tags, MultipartFile mediaFile) throws IOException {
         Post post = getPostById(id);
         if(post.getMediaUrl()!=null){
@@ -122,7 +133,10 @@ public class PostService   {
         }
         postRepository.deleteById(id);
     }
-
+    public String deleteAllByCreatorId(String creatorId) {
+        postRepository.deleteAllByCreator_Id(creatorId);
+        return "Deleted successfully";
+    }
 
     public void likePost(String id) {
         postRepository.incrementLikes(id);

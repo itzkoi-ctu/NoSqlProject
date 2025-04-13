@@ -5,6 +5,7 @@ import com.codewiz.socialmedia.service.PostService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -65,5 +66,14 @@ public class PostController {
     @PostMapping("/{id}/like")
     public void likePost(@PathVariable String id) {
         postService.likePost(id);
+    }
+    @GetMapping("/creator/{creatorId}")
+    public ResponseEntity<List<Post>> getPostsByCreatorId(@PathVariable String creatorId) {
+        List<Post> posts = postService.getPostByCreatorId(creatorId);
+        return ResponseEntity.ok(posts);
+    }
+    @DeleteMapping("/creator/delete")
+    public ResponseEntity<String> deleteAllPostByCreatorId(@RequestParam String creatorId){
+        return ResponseEntity.ok(postService.deleteAllByCreatorId(creatorId));
     }
 }

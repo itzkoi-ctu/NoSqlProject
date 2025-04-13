@@ -8,6 +8,8 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.Update;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface PostRepository extends MongoRepository<Post, String> {
 
@@ -19,4 +21,7 @@ public interface PostRepository extends MongoRepository<Post, String> {
     @Query("{ '_id': ?0 }")
     @Update("{ '$inc': { 'likes': 1 } }")
     void incrementLikes(String postId);
+
+    List<Post> findByCreator_Id(String creatorId);
+    void deleteAllByCreator_Id(String creatorId);
 }
